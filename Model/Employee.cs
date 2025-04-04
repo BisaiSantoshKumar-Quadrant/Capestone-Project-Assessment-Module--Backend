@@ -37,6 +37,12 @@ namespace QAssessment_project.Model
         [ForeignKey("RoleID")]
         public virtual Role Role { get; set; }
 
+        // Foreign Key
+        public int CategoryId { get; set; }
+
+        [ForeignKey("CategoryId")]
+        public virtual Category Category { get; set; }
+
         public virtual ICollection<EmployeeResponse> EmployeeResponses { get; set; } = new List<EmployeeResponse>();
         public virtual ICollection<AssessmentScore> AssessmentScores { get; set; } = new List<AssessmentScore>();
     }

@@ -2,6 +2,8 @@
 {
     public interface IOTPService
     {
-        void SendOTPToEmployee(string employeeEmail);
+        string GenerateOTP(int length);
+        Task<bool> VerifyOTPAsync(string email, string otp);
+        Task SendOTPAsync(string email);
     }
 }

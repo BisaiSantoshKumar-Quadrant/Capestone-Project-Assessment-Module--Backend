@@ -28,7 +28,7 @@ namespace QAssessment_project.Model
         public virtual Question Question { get; set; }
 
         [Required]
-        [StringLength(20)]
+        [StringLength(255)]
         public string SelectedOption { get; set; } = string.Empty; // Default empty string
     }
 }

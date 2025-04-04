@@ -21,6 +21,21 @@
             //_otpService = otpService;
         }
 
+        [HttpPost("mangerregister")]
+        public async Task<IActionResult> ManagerRegister([FromBody] ManagerRegisterDTO model)
+        {
+            var result = await _authService.ManagerRegisterAsync(model);
+
+            if (result == "Manager already exists!")
+                return Conflict(new { message = result });
+
+            if (result == "Default role 'User' not found. Please seed roles first.")
+                return BadRequest(new { message = result });
+
+            // Success case
+            return Ok(new { message = result });
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO model)
         {
@@ -89,6 +104,23 @@
             }
 
             return Ok(new { message = result.Message });
+        }
+
+        [HttpPost("send-otp")]
+        public async Task<IActionResult> SendOTP([FromBody] string email)
+        {
+            var result = await _authService.SendOTPForRegistrationAsync(email);
+            if (!result)
+                return Conflict("Email already exists!");
+            return Ok("OTP sent to your email.");
+        }
+
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOTP([FromBody] VerifyOTPDTO model)
+        {
+            var result = await _authService.VerifyOTPForRegistrationAsync(model.Email, model.OTP);
+            return result ? Ok("Email verified!") : BadRequest("Invalid or expired OTP.");
+
         }
 
     }

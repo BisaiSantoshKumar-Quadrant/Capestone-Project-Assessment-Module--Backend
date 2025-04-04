@@ -23,6 +23,24 @@ namespace QAssessment_project.Controllers
             _context = context;
         }
 
+        [HttpGet("getCategories")]
+        public async Task<ActionResult<List<string>>> GetCategories()
+        {
+            try
+            {
+                List<string> categories = await _context.Categories
+                    .Select(r => r.CategoryName)
+                    .ToListAsync();
+
+                return Ok(categories);
+            }
+            catch (Exception ex)
+            {
+                // Consider logging the exception here
+                return StatusCode(500, "An error occurred while retrieving categories");
+            }
+        }
+
         // GET: api/employees
         [HttpGet]
         [Authorize] // Require authentication
@@ -42,7 +60,8 @@ namespace QAssessment_project.Controllers
                 {
                     Email = e.Email,
                     RoleName = e.Role.RoleName,
-                    Username = e.Username
+                    Username = e.Username,
+                    CategoryName = e.Category != null ? e.Category.CategoryName : null
                 })
                 .ToListAsync();
 
@@ -91,27 +110,201 @@ namespace QAssessment_project.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{email}")]
+        [HttpDelete("DeleteEmployee/{email}")]
         [Authorize(Roles = "Admin")] // Restrict to Admin only
         public async Task<IActionResult> DeleteEmployee(string email)
         {
-            var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (currentUserEmail == email)
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email);
+            if (employee != null)
             {
-                return BadRequest(new { message = "You cannot delete yourself." });
+                _context.Employees.Remove(employee);
+                await _context.SaveChangesAsync();
+                return Ok(); // Optional: return success response
+            }
+            else
+            {
+                return NotFound(); // Optional: return 404 if the employee is not found
+            }
+        }
+
+        [HttpPost("addRole/{dto}")]
+        public async Task<IActionResult> AddRole(string dto)
+        {
+            Console.WriteLine(dto);
+            try
+            {
+                // Validate input
+                if (dto == null || string.IsNullOrEmpty(dto))
+                {
+                    return BadRequest("Role name is required");
+                }
+
+                // Check if role already exists
+                if (await _context.Roles.AnyAsync(r => r.RoleName == dto))
+                {
+                    return Conflict("Role already exists");
+                }
+
+                var roleEntity = new Role
+                {
+                    RoleName = dto
+                };
+                _context.Roles.Add(roleEntity);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { Message = "Role added successfully" });
+            }
+            catch (Exception ex)
+            {
+                // Consider logging the exception in production
+                return StatusCode(500, $"Failed to add role: {ex.Message}");
+            }
+        }
+
+        [HttpPost("addCategory/{category}")]
+        public async Task<IActionResult> AddCategory(string category)
+        {
+            try
+            {
+                Console.WriteLine(category);
+                if (string.IsNullOrEmpty(category))
+                {
+                    return BadRequest("Category name is required");
+                }
+
+                // Check if category already exists
+                if (await _context.Categories.AnyAsync(c => c.CategoryName == category))
+                {
+                    return Conflict("Category already exists");
+                }
+
+                var categoryEntity = new Category
+                {
+                    CategoryName = category
+                };
+                _context.Categories.Add(categoryEntity);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { Message = "Category added successfully", CategoryId = categoryEntity.CategoryId });
+            }
+            catch (Exception ex)
+            {
+                // Consider logging the exception
+                return StatusCode(500, $"Failed to add category: {ex.Message}");
+            }
+        }
+
+        [HttpGet("IsManagerPresent")]
+        public async Task<ActionResult<bool>> IsManagerPresent()
+        {
+            // Check if there is any employee with the role "Manager"
+            bool managerExists = await _context.Employees
+                .Include(e => e.Role)
+                .AnyAsync(e => e.Role.RoleName == "Manager");
+
+            return Ok(managerExists);
+        }
+
+        [HttpPut("update-category")]
+        [Authorize(Roles = "Manager")] // Restrict to Manager and Admin
+        public async Task<IActionResult> UpdateEmployeeCategoryByEmail([FromBody] UpdateCategoryByEmailDTO updateCategoryByEmailDTO)
+        {
+            var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (currentUserEmail == updateCategoryByEmailDTO.Email)
+            {
+                return BadRequest(new { message = "You cannot change your own category." });
             }
 
-            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email);
+            var category = await _context.Categories.FirstOrDefaultAsync(c => c.CategoryName == updateCategoryByEmailDTO.CategoryName);
+            if (category == null)
+            {
+                return NotFound(new { message = "Category not found" });
+            }
+
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == updateCategoryByEmailDTO.Email);
             if (employee == null)
             {
                 return NotFound(new { message = "Employee not found" });
             }
 
-            _context.Employees.Remove(employee);
+            employee.CategoryId = category.CategoryId;
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Employee deleted successfully" });
+            return NoContent();
         }
 
+        // DELETE: api/employees/deleteCategory/{categoryName}
+        [HttpDelete("deleteCategory/{categoryName}")]
+        [Authorize(Roles = "Manager")] // Restrict to Manager role
+        public async Task<IActionResult> DeleteCategory(string categoryName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(categoryName))
+                {
+                    return BadRequest(new { message = "Category name is required" });
+                }
+
+                var category = await _context.Categories.FirstOrDefaultAsync(c => c.CategoryName == categoryName);
+                if (category == null)
+                {
+                    return NotFound(new { message = "Category not found" });
+                }
+
+                // Check if any employees are assigned to this category
+                var employeesInCategory = await _context.Employees.AnyAsync(e => e.CategoryId == category.CategoryId);
+                if (employeesInCategory)
+                {
+                    return BadRequest(new { message = "Cannot delete category because it is assigned to one or more employees" });
+                }
+
+                _context.Categories.Remove(category);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Category deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                // Consider logging the exception
+                return StatusCode(500, $"Failed to delete category: {ex.Message}");
+            }
+        }
+
+        // DELETE: api/employees/deleteRole/{roleName}
+        [HttpDelete("deleteRole/{roleName}")]
+        [Authorize(Roles = "Manager")] // Restrict to Manager role
+        public async Task<IActionResult> DeleteRole(string roleName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(roleName))
+                {
+                    return BadRequest(new { message = "Role name is required" });
+                }
+
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == roleName);
+                if (role == null)
+                {
+                    return NotFound(new { message = "Role not found" });
+                }
+
+                // Check if any employees are assigned to this role
+                var employeesInRole = await _context.Employees.AnyAsync(e => e.RoleID == role.RoleID);
+                if (employeesInRole)
+                {
+                    return BadRequest(new { message = "Cannot delete role because it is assigned to one or more employees" });
+                }
+
+                _context.Roles.Remove(role);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Role deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                // Consider logging the exception
+                return StatusCode(500, $"Failed to delete role: {ex.Message}");
+            }
+        }
     }
 }

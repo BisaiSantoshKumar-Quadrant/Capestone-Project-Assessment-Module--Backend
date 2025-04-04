@@ -16,62 +16,55 @@ namespace QAssessment_project.Data
         public DbSet<AssessmentScore> AssessmentScores { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<EmployeeResponse> EmployeeResponses { get; set; }
+        public DbSet<Category> Categories { get; set; }
+
+        public DbSet<OTPRecord> OTPRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             // Set identity seed for primary keys
-
             modelBuilder.Entity<Employee>()
-     .Property(e => e.EmployeeId)
-     .ValueGeneratedOnAdd();
+                .Property(e => e.EmployeeId)
+                .ValueGeneratedOnAdd();
 
             modelBuilder.Entity<Role>()
                 .Property(r => r.RoleID)
                 .ValueGeneratedOnAdd();
 
-            // Set identity seed starting from 1
-            modelBuilder.Entity<Employee>()
-                .HasAnnotation("SqlServer:Identity", "1, 1");
-
-            modelBuilder.Entity<Role>()
-                .HasAnnotation("SqlServer:Identity", "1, 1");
-
-             
-
-            modelBuilder.Entity<Role>().HasData(
-    new Role { RoleID = 1, RoleName = "User" },
-    new Role { RoleID = 2, RoleName = "Admin" },
-    new Role { RoleID = 3, RoleName = "Manager" },
-    new Role { RoleID=4, RoleName="Guest"}
-);
-            modelBuilder.Entity<Employee>().HasData(
-                new Employee
-                {
-                    EmployeeId = 1,
-                    Username = "Sridevi",
-                    Email = "sridevi@gmail.com",
-                    Password = BCrypt.Net.BCrypt.HashPassword("Sridevi@12"),
-                    RoleID = 3
-
-                });
+            modelBuilder.Entity<Category>()
+                .Property(a => a.CategoryId)
+                .ValueGeneratedOnAdd();
 
             modelBuilder.Entity<AssessmentDescription>()
                 .Property(a => a.AssessmentID)
-                .UseIdentityColumn(1, 1);
+                .ValueGeneratedOnAdd();
 
             modelBuilder.Entity<Question>()
                 .Property(q => q.QuestionID)
-                .UseIdentityColumn(1, 1);
+                .ValueGeneratedOnAdd();
 
             modelBuilder.Entity<EmployeeResponse>()
                 .Property(er => er.Id)
-                .UseIdentityColumn(1, 1);
+                .ValueGeneratedOnAdd();
 
             modelBuilder.Entity<AssessmentScore>()
                 .Property(ascore => ascore.Id)
-                .UseIdentityColumn(1, 1);
+                .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<OTPRecord>()
+               .Property(o => o.Id)
+               .ValueGeneratedOnAdd();
+
+            // Relationships
+
+            // Employee - Category (Many-to-One)
+            modelBuilder.Entity<Employee>()
+                .HasOne(e => e.Category)
+                .WithMany(r => r.Employees)
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Employee - Role (Many-to-One)
             modelBuilder.Entity<Employee>()
@@ -101,12 +94,12 @@ namespace QAssessment_project.Data
                 .HasForeignKey(er => er.QuestionID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // EmployeeResponse - Assessment (Many-to-One)
+            // EmployeeResponse - Assessment (Many-to-One) (Now Cascade)
             modelBuilder.Entity<EmployeeResponse>()
                 .HasOne(er => er.Assessment)
                 .WithMany(a => a.EmployeeResponses)
                 .HasForeignKey(er => er.AssessmentID)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             // AssessmentScore - Employee (Many-to-One)
             modelBuilder.Entity<AssessmentScore>()
@@ -115,12 +108,26 @@ namespace QAssessment_project.Data
                 .HasForeignKey(ascore => ascore.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // AssessmentScore - Assessment (Many-to-One)
+            // AssessmentScore - Category (Many-to-One)
+            modelBuilder.Entity<AssessmentScore>()
+                .HasOne(ascore => ascore.Category)
+                .WithMany(e => e.AssessmentScores)
+                .HasForeignKey(ascore => ascore.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // AssessmentScore - Assessment (Many-to-One) (Now Cascade)
             modelBuilder.Entity<AssessmentScore>()
                 .HasOne(ascore => ascore.Assessment)
                 .WithMany(a => a.AssessmentScores)
                 .HasForeignKey(ascore => ascore.AssessmentID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // AssessmentDescription - Category (Many-to-One)
+            modelBuilder.Entity<AssessmentDescription>()
+                .HasOne(ascore => ascore.Category)
+                .WithMany(a => a.AssessmentDescriptions)
+                .HasForeignKey(ascore => ascore.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

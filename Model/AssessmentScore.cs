@@ -17,6 +17,19 @@ namespace QAssessment_project.Model
         [ForeignKey("EmployeeId")]
         public virtual Employee Employee { get; set; }
 
+
+        // Foreign Key - Category
+        public int CategoryId { get; set; }
+
+
+
+        [ForeignKey("CategoryId")]
+        public virtual Category Category { get; set; }
+
+
+        // Status Code
+        public bool Status { get; set; } = false;
+
         // Foreign Key - Assessment
         public int AssessmentID { get; set; }
         

@@ -6,5 +6,6 @@
         public string Topic { get; set; }
         public string Description { get; set; }
         public DateTime DateConducted { get; set; }
+        public int PassCriteria { get; set; }
     }
 }

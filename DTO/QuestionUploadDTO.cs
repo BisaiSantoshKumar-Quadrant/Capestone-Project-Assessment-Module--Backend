@@ -12,6 +12,9 @@ namespace QAssessment_project.DTO
             public string Description { get; set; }
 
             public int ExamDuration { get; set; }
+
+        public string CategoryName {  get; set; }   
+        public int PassPercentage { get; set; }
       
         }
     

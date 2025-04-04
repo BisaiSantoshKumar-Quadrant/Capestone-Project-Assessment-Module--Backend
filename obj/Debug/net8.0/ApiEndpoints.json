@@ -27,6 +27,16 @@
   },
   {
     "ContainingType": "QAssessment_project.Controllers.AssessmentController",
+    "Method": "GetAllAssessments",
+    "RelativePath": "api/assessment/all-assessments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.AssessmentController",
     "Method": "GetAllScores",
     "RelativePath": "api/assessment/all-scores",
     "HttpMethod": "GET",
@@ -45,6 +55,43 @@
     "Parameters": [
       {
         "Name": "employeeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.AssessmentController",
+    "Method": "DeleteNotTakenAssessment",
+    "RelativePath": "api/assessment/deleteExam/{assessmentId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "assessmentId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.AssessmentController",
+    "Method": "GetEmployeeResponses",
+    "RelativePath": "api/assessment/employee-responses/{employeeId}/{assessmentId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "employeeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "assessmentId",
         "Type": "System.Int32",
         "IsRequired": true
       }
@@ -133,6 +180,22 @@
   },
   {
     "ContainingType": "QAssessment_project.Controllers.AuthController",
+    "Method": "ManagerRegister",
+    "RelativePath": "api/auth/mangerregister",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "QAssessment_project.Services.ManagerRegisterDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.AuthController",
     "Method": "Register",
     "RelativePath": "api/auth/register",
     "HttpMethod": "POST",
@@ -164,6 +227,38 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "QAssessment_project.Controllers.AuthController",
+    "Method": "SendOTP",
+    "RelativePath": "api/auth/send-otp",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "email",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.AuthController",
+    "Method": "VerifyOTP",
+    "RelativePath": "api/auth/verify-otp",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "QAssessment_project.DTO.VerifyOTPDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "QAssessment_project.Controllers.EmployeesController",
     "Method": "GetEmployees",
     "RelativePath": "api/Employees",
@@ -185,8 +280,56 @@
   },
   {
     "ContainingType": "QAssessment_project.Controllers.EmployeesController",
+    "Method": "AddCategory",
+    "RelativePath": "api/Employees/addCategory/{category}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "category",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.EmployeesController",
+    "Method": "AddRole",
+    "RelativePath": "api/Employees/addRole/{dto}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.EmployeesController",
+    "Method": "DeleteCategory",
+    "RelativePath": "api/Employees/deleteCategory/{categoryName}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "categoryName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.EmployeesController",
     "Method": "DeleteEmployee",
-    "RelativePath": "api/Employees/{email}",
+    "RelativePath": "api/Employees/DeleteEmployee/{email}",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -198,6 +341,62 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.EmployeesController",
+    "Method": "DeleteRole",
+    "RelativePath": "api/Employees/deleteRole/{roleName}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "roleName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.EmployeesController",
+    "Method": "GetCategories",
+    "RelativePath": "api/Employees/getCategories",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.EmployeesController",
+    "Method": "IsManagerPresent",
+    "RelativePath": "api/Employees/IsManagerPresent",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Boolean",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "QAssessment_project.Controllers.EmployeesController",
@@ -236,6 +435,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "QAssessment_project.Controllers.EmployeesController",
+    "Method": "UpdateEmployeeCategoryByEmail",
+    "RelativePath": "api/Employees/update-category",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "updateCategoryByEmailDTO",
+        "Type": "QAssessment_project.DTO.UpdateCategoryByEmailDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "QAssessment_project.Controllers.QuestionUploadController",
     "Method": "UploadQuestions",
     "RelativePath": "api/question-upload",
@@ -262,8 +477,127 @@
         "Name": "ExamDuration",
         "Type": "System.Int32",
         "IsRequired": false
+      },
+      {
+        "Name": "CategoryName",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "PassPercentage",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.SearchController",
+    "Method": "GetAssessmentDetailsByEmail",
+    "RelativePath": "api/Search/getAssessmentDetailsByEmail/{email}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "email",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.SearchController",
+    "Method": "GetAssessmentTakenUser",
+    "RelativePath": "api/Search/getAssessmentTakenUser",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Topic",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Description",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.SearchController",
+    "Method": "GetAssessments",
+    "RelativePath": "api/Search/getCategoryAssessments{categoryName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "categoryName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[System.Object, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.SearchController",
+    "Method": "GetAllAssessments",
+    "RelativePath": "api/Search/getCategoryAssessmentsAll",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[System.Object, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.SearchController",
+    "Method": "GetEmails",
+    "RelativePath": "api/Search/getCategoryEmails{categoryName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "categoryName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[System.Object, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   }
 ]

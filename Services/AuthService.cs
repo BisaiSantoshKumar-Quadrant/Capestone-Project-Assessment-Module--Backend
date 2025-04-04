@@ -1,14 +1,13 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using QAssessment_project.Data;
 using QAssessment_project.Model;
-using Microsoft.EntityFrameworkCore;
-using BC = BCrypt.Net.BCrypt;
 using QAssessment_project.DTO;
-using Microsoft.AspNetCore.Mvc;
+using BC = BCrypt.Net.BCrypt;
 
 namespace QAssessment_project.Services
 {
@@ -17,56 +16,155 @@ namespace QAssessment_project.Services
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
+        private readonly IOTPService _otpService;
 
-        public AuthService(ApplicationDbContext context, IConfiguration configuration,IEmailService emailService)
+        public AuthService(ApplicationDbContext context, IConfiguration configuration, IEmailService emailService, IOTPService otpService)
         {
             _context = context;
             _configuration = configuration;
             _emailService = emailService;
+            _otpService = otpService;
+        }
+
+        public async Task<bool> SendOTPForRegistrationAsync(string email)
+        {
+            if (await _context.Employees.AnyAsync(u => u.Email == email))
+                return false; // Email already exists
+
+            await _otpService.SendOTPAsync(email);
+            return true;
+        }
+
+        public async Task<bool> VerifyOTPForRegistrationAsync(string email, string otp)
+        {
+            return await _otpService.VerifyOTPAsync(email, otp);
         }
 
         public async Task<string> RegisterAsync(RegisterDTO model)
         {
-            if (await _context.Employees.AnyAsync(u => u.Email == model.Email))
-                return "User already exists!";
-
-            var defaultRoleName = "Guest";
-
-            // Fetch role, or create it if not exists
-            var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == defaultRoleName);
-            if (role == null)
-                return "Default role 'Guest' not found. Please seed roles first.";
-
-            var employee = new Employee
+            try
             {
-                Email = model.Email,
-                Username = model.Username,
-                Password = BC.HashPassword(model.Password), // Secure Password
-                RoleID = role.RoleID,
-                JoinedDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
-    TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"))
-            };
+                // Check if email is already registered
+                if (await _context.Employees.AnyAsync(u => u.Email == model.Email))
+                    return "User already exists!";
 
-            _context.Employees.Add(employee);
-            await _context.SaveChangesAsync();
-            // ✅ Fetch the saved employee to ensure EmployeeId is set
-            var savedEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == model.Email);
-            if (savedEmployee == null)
-                return "Error retrieving saved employee!";
+                // Fetch or create the User role
+                string roleName = "User";
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == roleName);
+                if (role == null)
+                {
+                    role = new Role { RoleName = "User" };
+                    _context.Roles.Add(role);
+                    await _context.SaveChangesAsync();
+                }
 
-            // ✅ Now we can assign assessments because EmployeeId exists
-            var assessments = await _context.Assessments.ToListAsync();
-            var assessmentScores = assessments.Select(a => new AssessmentScore
+                // Fetch the category
+                var category = await _context.Categories.FirstOrDefaultAsync(c => c.CategoryName == model.CategoryName);
+                if (category == null)
+                {
+                    return $"Category '{model.CategoryName}' not found. Please seed category first.";
+                }
+
+                // Create new employee record after OTP verification
+                var employee = new Employee
+                {
+                    Email = model.Email,
+                    Username = model.Username,
+                    Password = BC.HashPassword(model.Password),
+                    RoleID = role.RoleID,
+                    CategoryId = category.CategoryId,
+                    JoinedDate = TimeZoneInfo.ConvertTimeFromUtc(
+                        DateTime.UtcNow,
+                        TimeZoneInfo.FindSystemTimeZoneById("India Standard Time")
+                    )
+                };
+
+                _context.Employees.Add(employee);
+                await _context.SaveChangesAsync();
+
+                // Fetch assessments for this category
+                var assessments = await _context.Assessments
+                    .Where(a => a.CategoryId == category.CategoryId)
+                    .ToListAsync();
+
+                // Insert assessment scores for the user
+                var assessmentScores = assessments.Select(a => new AssessmentScore
+                {
+                    EmployeeId = employee.EmployeeId,
+                    AssessmentID = a.AssessmentID,
+                    IsTaken = false,
+                    CategoryId = category.CategoryId
+                }).ToList();
+
+                _context.AssessmentScores.AddRange(assessmentScores);
+                await _context.SaveChangesAsync();
+
+                return "User registered successfully!";
+            }
+            catch (Exception ex)
             {
-                EmployeeId = savedEmployee.EmployeeId, // Now EmployeeId is confirmed
-                AssessmentID = a.AssessmentID,
-                Score = 0, // Default score
-                IsTaken = false // Mark as not taken
-            }).ToList();
+                return $"Registration failed: {ex.Message}";
+            }
+        }
 
-            _context.AssessmentScores.AddRange(assessmentScores);
-            await _context.SaveChangesAsync(); // Save assessment scores
-            return "User registered successfully!";
+        public async Task<string> ManagerRegisterAsync(ManagerRegisterDTO model)
+        {
+            try
+            {
+                // Check if email is already registered
+                if (await _context.Employees.AnyAsync(u => u.Email == model.Email))
+                    return "User already exists!";
+
+                // Verify secret key
+                const string secretKey = "Manager@1199";
+                if (model.SecretKey != secretKey)
+                    return "Invalid secret key!";
+
+                // Fetch or create the Manager role
+                var managerRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Manager");
+                if (managerRole == null)
+                {
+                    managerRole = new Role { RoleName = "Manager" };
+                    _context.Roles.Add(managerRole);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Fetch or create the Management category
+                var managerCategory = await _context.Categories.FirstOrDefaultAsync(c => c.CategoryName == "Management");
+                if (managerCategory == null)
+                {
+                    managerCategory = new Category { CategoryName = "Management" };
+                    _context.Categories.Add(managerCategory);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Ensure only one Manager is allowed
+                if (await _context.Employees.AnyAsync(e => e.RoleID == managerRole.RoleID))
+                    return "A Manager already exists! Only one Manager is allowed.";
+
+                // Create new employee record after OTP verification
+                var employee = new Employee
+                {
+                    Email = model.Email,
+                    Username = model.Username,
+                    Password = BC.HashPassword(model.Password),
+                    RoleID = managerRole.RoleID,
+                    CategoryId = managerCategory.CategoryId,
+                    JoinedDate = TimeZoneInfo.ConvertTimeFromUtc(
+                        DateTime.UtcNow,
+                        TimeZoneInfo.FindSystemTimeZoneById("India Standard Time")
+                    )
+                };
+
+                _context.Employees.Add(employee);
+                await _context.SaveChangesAsync();
+
+                return "Manager registered successfully!";
+            }
+            catch (Exception ex)
+            {
+                return $"Registration failed: {ex.Message}";
+            }
         }
 
         public async Task<LoginResultDTO> LoginAsync(LoginDTO model)
@@ -80,17 +178,16 @@ namespace QAssessment_project.Services
             if (!BC.Verify(model.Password, user.Password))
                 return new LoginResultDTO { Token = "INVALID_PASSWORD" };
 
-            // Rest of your token generation code remains unchanged
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-            new Claim(ClaimTypes.NameIdentifier, user.EmployeeId.ToString()),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role.RoleName)
-        }),
+                    new Claim(ClaimTypes.NameIdentifier, user.EmployeeId.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, user.Role.RoleName)
+                }),
                 Expires = DateTime.UtcNow.AddHours(3),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
@@ -109,25 +206,18 @@ namespace QAssessment_project.Services
 
         public async Task<(bool Success, string Message)> ForgotPasswordAsync(string email)
         {
-            // Find the user by email
             var user = await _context.Employees.FirstOrDefaultAsync(u => u.Email == email);
-
-            // Don't reveal that the user doesn't exist
             if (user == null)
             {
                 return (true, "If your email is registered, you will receive a password reset link");
             }
 
-            // Generate a random token
             var token = Guid.NewGuid().ToString();
-
-            // Update user with reset token
             user.ResetToken = token;
             user.ResetTimeExpires = DateTime.UtcNow.AddHours(24);
 
             await _context.SaveChangesAsync();
 
-            // Send password reset email
             var resetUrl = $"http://localhost:3000/reset-password?email={email}&token={token}";
             var emailBody = $"Please reset your password by clicking <a href='{resetUrl}'>here</a>. The link is valid for 24 hours.";
 
@@ -138,31 +228,19 @@ namespace QAssessment_project.Services
 
         public async Task<(bool Success, string Message)> ResetPasswordAsync(ResetPasswordRequestDTO request)
         {
-            // Find the user by email
             var user = await _context.Employees.FirstOrDefaultAsync(u => u.Email == request.Email);
-
-            // Check if user exists, token is valid, and not expired
             if (user == null || user.ResetToken != request.Token || user.ResetTimeExpires < DateTime.UtcNow)
             {
                 return (false, "Invalid or expired token");
             }
 
-            // Update password
-            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.Password = BC.HashPassword(request.NewPassword);
             user.ResetToken = null;
             user.ResetTimeExpires = null;
 
             await _context.SaveChangesAsync();
 
             return (true, "Password has been reset successfully");
-        }
-
-
-
-        public void SendOTPToEmployee(string employeeEmail)
-        {
-            string otp = OTPGenerator.GenerateOTP(6); // Generate a 6-digit OTP
-            EmailSender.SendEmail(employeeEmail, otp); // Send the OTP to the employee's email
         }
     }
 }

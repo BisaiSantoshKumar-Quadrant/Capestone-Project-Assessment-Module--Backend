@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QAssessment_project.Data;
 
@@ -11,9 +12,11 @@ using QAssessment_project.Data;
 namespace QAssessment_project.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250325071605_intialsecret14")]
+    partial class intialsecret14
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,7 +33,7 @@ namespace QAssessment_project.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AssessmentID"));
 
-                    b.Property<int?>("CategoryId")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("DateConducted")
@@ -183,8 +186,8 @@ namespace QAssessment_project.Migrations
 
                     b.Property<string>("SelectedOption")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
@@ -195,30 +198,6 @@ namespace QAssessment_project.Migrations
                     b.HasIndex("QuestionID");
 
                     b.ToTable("EmployeeResponses");
-                });
-
-            modelBuilder.Entity("QAssessment_project.Model.OTPRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("OTP")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("OTPRecords");
                 });
 
             modelBuilder.Entity("QAssessment_project.Model.Question", b =>
@@ -286,7 +265,8 @@ namespace QAssessment_project.Migrations
                     b.HasOne("QAssessment_project.Model.Category", "Category")
                         .WithMany("AssessmentDescriptions")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("Category");
                 });
@@ -296,7 +276,7 @@ namespace QAssessment_project.Migrations
                     b.HasOne("QAssessment_project.Model.AssessmentDescription", "Assessment")
                         .WithMany("AssessmentScores")
                         .HasForeignKey("AssessmentID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("QAssessment_project.Model.Category", "Category")
@@ -342,7 +322,7 @@ namespace QAssessment_project.Migrations
                     b.HasOne("QAssessment_project.Model.AssessmentDescription", "Assessment")
                         .WithMany("EmployeeResponses")
                         .HasForeignKey("AssessmentID")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("QAssessment_project.Model.Employee", "Employee")

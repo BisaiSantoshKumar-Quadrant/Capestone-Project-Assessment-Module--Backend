@@ -12,8 +12,8 @@ using QAssessment_project.Data;
 namespace QAssessment_project.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250319052858_santosh")]
-    partial class santosh
+    [Migration("20250325093633_intiacreate")]
+    partial class intiacreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,12 +33,18 @@ namespace QAssessment_project.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AssessmentID"));
 
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("DateConducted")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PassPercentage")
+                        .HasColumnType("int");
 
                     b.Property<int>("TimeLimit")
                         .HasColumnType("int");
@@ -52,6 +58,8 @@ namespace QAssessment_project.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("AssessmentID");
+
+                    b.HasIndex("CategoryId");
 
                     b.ToTable("Assessments");
                 });
@@ -67,6 +75,9 @@ namespace QAssessment_project.Migrations
                     b.Property<int>("AssessmentID")
                         .HasColumnType("int");
 
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("DateTaken")
                         .HasColumnType("datetime2");
 
@@ -79,13 +90,35 @@ namespace QAssessment_project.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("int");
 
+                    b.Property<bool>("Status")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AssessmentID");
 
+                    b.HasIndex("CategoryId");
+
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("AssessmentScores");
+                });
+
+            modelBuilder.Entity("QAssessment_project.Model.Category", b =>
+                {
+                    b.Property<int>("CategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryId"));
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CategoryId");
+
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("QAssessment_project.Model.Employee", b =>
@@ -95,6 +128,9 @@ namespace QAssessment_project.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EmployeeId"));
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -124,23 +160,11 @@ namespace QAssessment_project.Migrations
 
                     b.HasKey("EmployeeId");
 
+                    b.HasIndex("CategoryId");
+
                     b.HasIndex("RoleID");
 
                     b.ToTable("Employees");
-
-                    b.HasAnnotation("SqlServer:Identity", "1, 1");
-
-                    b.HasData(
-                        new
-                        {
-                            EmployeeId = 1,
-                            Email = "sridevi@gmail.com",
-                            JoinedDate = new DateTime(2025, 3, 19, 5, 28, 57, 751, DateTimeKind.Utc).AddTicks(6274),
-                            Password = "$2a$11$IDhjzgYgRlebQFBaPt59vucGItKIan2gxWAGfoI4fwga4nCoKy0HG",
-                            ResetToken = "",
-                            RoleID = 3,
-                            Username = "Sridevi"
-                        });
                 });
 
             modelBuilder.Entity("QAssessment_project.Model.EmployeeResponse", b =>
@@ -234,30 +258,17 @@ namespace QAssessment_project.Migrations
                     b.HasKey("RoleID");
 
                     b.ToTable("Roles");
+                });
 
-                    b.HasAnnotation("SqlServer:Identity", "1, 1");
+            modelBuilder.Entity("QAssessment_project.Model.AssessmentDescription", b =>
+                {
+                    b.HasOne("QAssessment_project.Model.Category", "Category")
+                        .WithMany("AssessmentDescriptions")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
-                    b.HasData(
-                        new
-                        {
-                            RoleID = 1,
-                            RoleName = "User"
-                        },
-                        new
-                        {
-                            RoleID = 2,
-                            RoleName = "Admin"
-                        },
-                        new
-                        {
-                            RoleID = 3,
-                            RoleName = "Manager"
-                        },
-                        new
-                        {
-                            RoleID = 4,
-                            RoleName = "Guest"
-                        });
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("QAssessment_project.Model.AssessmentScore", b =>
@@ -265,7 +276,13 @@ namespace QAssessment_project.Migrations
                     b.HasOne("QAssessment_project.Model.AssessmentDescription", "Assessment")
                         .WithMany("AssessmentScores")
                         .HasForeignKey("AssessmentID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QAssessment_project.Model.Category", "Category")
+                        .WithMany("AssessmentScores")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("QAssessment_project.Model.Employee", "Employee")
@@ -276,16 +293,26 @@ namespace QAssessment_project.Migrations
 
                     b.Navigation("Assessment");
 
+                    b.Navigation("Category");
+
                     b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("QAssessment_project.Model.Employee", b =>
                 {
+                    b.HasOne("QAssessment_project.Model.Category", "Category")
+                        .WithMany("Employees")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("QAssessment_project.Model.Role", "Role")
                         .WithMany("Employees")
                         .HasForeignKey("RoleID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Category");
 
                     b.Navigation("Role");
                 });
@@ -335,6 +362,15 @@ namespace QAssessment_project.Migrations
                     b.Navigation("EmployeeResponses");
 
                     b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("QAssessment_project.Model.Category", b =>
+                {
+                    b.Navigation("AssessmentDescriptions");
+
+                    b.Navigation("AssessmentScores");
+
+                    b.Navigation("Employees");
                 });
 
             modelBuilder.Entity("QAssessment_project.Model.Employee", b =>

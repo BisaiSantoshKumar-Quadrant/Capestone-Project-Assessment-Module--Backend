@@ -3,12 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace QAssessment_project.Migrations
 {
     /// <inheritdoc />
-    public partial class santosh : Migration
+    public partial class intialsecret : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -23,11 +21,25 @@ namespace QAssessment_project.Migrations
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateConducted = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TotalQuestions = table.Column<int>(type: "int", nullable: false),
-                    TimeLimit = table.Column<int>(type: "int", nullable: false)
+                    TimeLimit = table.Column<int>(type: "int", nullable: false),
+                    PassPercentage = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Assessments", x => x.AssessmentID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Categories",
+                columns: table => new
+                {
+                    CategoryId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CategoryName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Categories", x => x.CategoryId);
                 });
 
             migrationBuilder.CreateTable(
@@ -80,11 +92,18 @@ namespace QAssessment_project.Migrations
                     JoinedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ResetToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ResetTimeExpires = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RoleID = table.Column<int>(type: "int", nullable: false)
+                    RoleID = table.Column<int>(type: "int", nullable: false),
+                    CategoryId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Employees", x => x.EmployeeId);
+                    table.ForeignKey(
+                        name: "FK_Employees_Categories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "Categories",
+                        principalColumn: "CategoryId",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Employees_Roles_RoleID",
                         column: x => x.RoleID,
@@ -101,6 +120,8 @@ namespace QAssessment_project.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     IsTaken = table.Column<bool>(type: "bit", nullable: false),
                     EmployeeId = table.Column<int>(type: "int", nullable: false),
+                    CategoryId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<bool>(type: "bit", nullable: false),
                     AssessmentID = table.Column<int>(type: "int", nullable: false),
                     Score = table.Column<int>(type: "int", nullable: false),
                     DateTaken = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -113,7 +134,13 @@ namespace QAssessment_project.Migrations
                         column: x => x.AssessmentID,
                         principalTable: "Assessments",
                         principalColumn: "AssessmentID",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssessmentScores_Categories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "Categories",
+                        principalColumn: "CategoryId",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_AssessmentScores_Employees_EmployeeId",
                         column: x => x.EmployeeId,
@@ -156,26 +183,15 @@ namespace QAssessment_project.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
-            migrationBuilder.InsertData(
-                table: "Roles",
-                columns: new[] { "RoleID", "RoleName" },
-                values: new object[,]
-                {
-                    { 1, "User" },
-                    { 2, "Admin" },
-                    { 3, "Manager" },
-                    { 4, "Guest" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "Employees",
-                columns: new[] { "EmployeeId", "Email", "JoinedDate", "Password", "ResetTimeExpires", "ResetToken", "RoleID", "Username" },
-                values: new object[] { 1, "sridevi@gmail.com", new DateTime(2025, 3, 19, 5, 28, 57, 751, DateTimeKind.Utc).AddTicks(6274), "$2a$11$IDhjzgYgRlebQFBaPt59vucGItKIan2gxWAGfoI4fwga4nCoKy0HG", null, "", 3, "Sridevi" });
-
             migrationBuilder.CreateIndex(
                 name: "IX_AssessmentScores_AssessmentID",
                 table: "AssessmentScores",
                 column: "AssessmentID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssessmentScores_CategoryId",
+                table: "AssessmentScores",
+                column: "CategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AssessmentScores_EmployeeId",
@@ -196,6 +212,11 @@ namespace QAssessment_project.Migrations
                 name: "IX_EmployeeResponses_QuestionID",
                 table: "EmployeeResponses",
                 column: "QuestionID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Employees_CategoryId",
+                table: "Employees",
+                column: "CategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Employees_RoleID",
@@ -222,6 +243,9 @@ namespace QAssessment_project.Migrations
 
             migrationBuilder.DropTable(
                 name: "Questions");
+
+            migrationBuilder.DropTable(
+                name: "Categories");
 
             migrationBuilder.DropTable(
                 name: "Roles");

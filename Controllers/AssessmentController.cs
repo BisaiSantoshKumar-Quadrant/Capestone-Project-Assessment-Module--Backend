@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using QAssessment_project.Data;
 using QAssessment_project.DTO;
 using QAssessment_project.Model;
@@ -43,7 +44,7 @@ namespace QAssessment_project.Controllers
                         assessmentID = a.AssessmentID,
                         topic = a.Topic,
                         description = a.Description,
-                       
+
                     })
                     .ToListAsync();
 
@@ -71,7 +72,8 @@ namespace QAssessment_project.Controllers
                             topic = assessment.Topic,
                             description = assessment.Description, // Include description
                             score = score.Score, // Fetch the score
-                            totalQuestions=assessment.TotalQuestions,
+                            passingPercentage = assessment.PassPercentage,
+                            totalQuestions = assessment.TotalQuestions,
                             dateTaken = score.DateTaken
                         })
                     .ToListAsync();
@@ -86,68 +88,76 @@ namespace QAssessment_project.Controllers
 
 
 
-
         [HttpGet("questions/{assessmentId}")]
         public async Task<IActionResult> GetQuestions(int assessmentId)
         {
             try
             {
                 // 🔐 Extract Employee ID from JWT Token
-
                 int employeeId = _jwtService.GetEmployeeIdFromToken();
 
                 // ✅ Check if the exam is assigned to the user
-
                 var examScore = await _context.AssessmentScores
-
                     .FirstOrDefaultAsync(s => s.EmployeeId == employeeId && s.AssessmentID == assessmentId);
 
                 if (examScore == null)
-
                 {
-
                     return NotFound(new { message = "This exam does not exist or is not assigned to you." });
-
                 }
 
-                // ✅ Prevent retaking completed exams
-
-                if (examScore.IsTaken)
-
+                // ✅ Prevent retaking completed exams if passed
+                if (examScore.IsTaken && examScore.Status)
                 {
-
-                    return BadRequest(new { message = "You have already completed this exam." });
-
+                    return BadRequest(new
+                    {
+                        message = "You have already passed this exam.",
+                        score = examScore.Score,
+                        totalQuestions = await _context.Questions.CountAsync(q => q.ExamID == assessmentId),
+                        percentage = (examScore.Score * 100) / await _context.Questions.CountAsync(q => q.ExamID == assessmentId),
+                        dateTaken = examScore.DateTaken,
+                        topic = await _context.Assessments.Where(a => a.AssessmentID == assessmentId).Select(a => a.Topic).FirstOrDefaultAsync(),
+                        description = await _context.Assessments.Where(a => a.AssessmentID == assessmentId).Select(a => a.Description).FirstOrDefaultAsync()
+                    });
                 }
-
 
                 var questions = await _context.Questions
                     .Where(q => q.ExamID == assessmentId)
                     .Select(q => new QuestionDTO
                     {
                         QuestionID = q.QuestionID,
-                        AssesmentId=q.ExamID,
+                        AssesmentId = q.ExamID,
                         QuestionText = q.QuestionText,
                         Options = new List<string> { q.OptionA, q.OptionB, q.OptionC, q.OptionD }
                     })
                     .ToListAsync();
+
                 var duration = await _context.Assessments
-      .Where(q => q.AssessmentID == assessmentId)
-      .Select(q => q.TimeLimit)
-      .FirstOrDefaultAsync();
+                    .Where(q => q.AssessmentID == assessmentId)
+                    .Select(q => q.TimeLimit)
+                    .FirstOrDefaultAsync();
+
                 var topic = await _context.Assessments
-   .Where(q => q.AssessmentID == assessmentId)
-   .Select(q => q.Topic)
-   .FirstOrDefaultAsync();
+                    .Where(q => q.AssessmentID == assessmentId)
+                    .Select(q => q.Topic)
+                    .FirstOrDefaultAsync();
+
+                //   PassPercentage
+                var passCriteria = await _context.Assessments
+                    .Where(q => q.AssessmentID == assessmentId)
+                    .Select(q => q.PassPercentage)
+                    .FirstOrDefaultAsync();
+
                 if (!questions.Any())
                 {
                     return NotFound(new { message = "No questions found for this assessment." });
                 }
-                
-                return Ok(new { 
-                questions,
-                duration,
-                    topic
+
+                return Ok(new
+                {
+                    questions,
+                    duration,
+                    topic,
+                    passingPercentage = passCriteria // Map PassCriteria to passingPercentage in response
                 });
             }
             catch (Exception ex)
@@ -155,8 +165,6 @@ namespace QAssessment_project.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving questions.", error = ex.Message });
             }
         }
-
-
 
 
         [HttpPost("submit")]
@@ -174,7 +182,18 @@ namespace QAssessment_project.Controllers
                 var employeeId = submission.EmployeeId;
                 var assessmentId = submission.AssessmentId;
 
-                // Store responses in EmployeeResponse table
+                // 🔹 Remove previous records for the same EmployeeId and AssessmentId
+                var existingResponses = await _context.EmployeeResponses
+                    .Where(e => e.EmployeeID == employeeId && e.AssessmentID == assessmentId)
+                    .ToListAsync();
+
+                if (existingResponses.Any())
+                {
+                    _context.EmployeeResponses.RemoveRange(existingResponses);
+                    await _context.SaveChangesAsync();  // Commit deletion first
+                }
+
+                // 🔹 Store new responses in EmployeeResponse table
                 foreach (var response in submission.EmployeeResponses)
                 {
                     var employeeResponse = new EmployeeResponse
@@ -187,9 +206,10 @@ namespace QAssessment_project.Controllers
 
                     _context.EmployeeResponses.Add(employeeResponse);
                 }
+
                 await _context.SaveChangesAsync();
 
-                // Retrieve correct answers from Question table
+                // ✅ Retrieve correct answers from Question table
                 var questionIds = submission.EmployeeResponses.Select(r => r.QuestionID).ToList();
                 var correctAnswers = await _context.Questions
                     .Where(q => questionIds.Contains(q.QuestionID))
@@ -204,8 +224,14 @@ namespace QAssessment_project.Controllers
                 int score = submission.EmployeeResponses.Count(r =>
                     correctAnswers.ContainsKey(r.QuestionID) && correctAnswers[r.QuestionID] == r.SelectedOption
                 );
+                int percentage = (score * 100) / totalQuestions;
 
-                // ✅ Update AssessmentScore table
+                int passPercentage = _context.Assessments
+                    .Where(e => e.AssessmentID == assessmentId)
+                    .Select(e => e.PassPercentage)
+                    .FirstOrDefault();
+
+                // ✅ Update or Insert into AssessmentScore table
                 var assessmentScore = await _context.AssessmentScores
                     .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.AssessmentID == assessmentId);
 
@@ -213,8 +239,9 @@ namespace QAssessment_project.Controllers
                 {
                     assessmentScore.Score = score;
                     assessmentScore.DateTaken = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
-    TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"));
+                        TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"));
                     assessmentScore.IsTaken = true;
+                    assessmentScore.Status = percentage >= passPercentage;
                 }
                 else
                 {
@@ -223,7 +250,8 @@ namespace QAssessment_project.Controllers
                         EmployeeId = employeeId,
                         AssessmentID = assessmentId,
                         Score = score,
-                        IsTaken = true
+                        IsTaken = true,
+                        Status = percentage >= passPercentage
                     });
                 }
 
@@ -242,7 +270,159 @@ namespace QAssessment_project.Controllers
                 await transaction.RollbackAsync();
                 return StatusCode(500, $"An error occurred: {ex.Message}");
             }
+
         }
+
+
+        [HttpGet("employee-responses/{employeeId}/{assessmentId}")]
+        public async Task<IActionResult> GetEmployeeResponses(int employeeId, int assessmentId)
+        {
+            try
+            {
+                var assessmentScore = await _context.AssessmentScores
+                    .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.AssessmentID == assessmentId);
+
+                if (assessmentScore == null || !assessmentScore.IsTaken)
+                {
+                    return NotFound(new { message = "No completed assessment found for this employee and assessment ID" });
+                }
+
+                var responses = await _context.EmployeeResponses
+                    .Where(r => r.EmployeeID == employeeId && r.AssessmentID == assessmentId)
+                    .Join(_context.Questions,
+                        response => response.QuestionID,
+                        question => question.QuestionID,
+                        (response, question) => new
+                        {
+                            QuestionId = question.QuestionID,
+                            QuestionText = question.QuestionText,
+                            EmployeeAnswer = response.SelectedOption,
+                            CorrectAnswer = question.CorrectAns,
+                            IsCorrect = response.SelectedOption == question.CorrectAns
+                        })
+                    .ToListAsync();
+
+                var assessment = await _context.Assessments
+                    .Where(a => a.AssessmentID == assessmentId)
+                    .Select(a => new
+                    {
+                        Topic = a.Topic,
+                        Description = a.Description,
+                        TotalQuestions = a.TotalQuestions,
+                        PassingPercentage = a.PassPercentage
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (responses == null || !responses.Any())
+                {
+                    return NotFound(new { message = "No responses found for this assessment" });
+                }
+
+                int correctCount = responses.Count(r => r.IsCorrect);
+
+                return Ok(new
+                {
+                    AssessmentDetails = new
+                    {
+                        AssessmentId = assessmentId,
+                        assessment.Topic,
+                        assessment.Description,
+                        assessment.TotalQuestions,
+                        assessment.PassingPercentage,
+                        Score = assessmentScore.Score,
+                        DateTaken = assessmentScore.DateTaken,
+                        Percentage = (correctCount * 100) / assessment.TotalQuestions
+                    },
+                    Responses = responses.Select(r => new
+                    {
+                        r.QuestionId,
+                        r.QuestionText,
+                        r.EmployeeAnswer,
+                        r.CorrectAnswer,
+                        r.IsCorrect
+                    })
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "An error occurred while fetching employee responses",
+                    error = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("all-assessments")]
+
+        [Authorize(Roles = "Admin,Manager")]
+
+        public async Task<IActionResult> GetAllAssessments()
+
+        {
+
+            try
+
+            {
+
+                var assessments = await _context.Assessments
+
+                    .Select(a => new
+
+                    {
+
+                        assessmentId = a.AssessmentID,
+
+                        topic = a.Topic,
+
+                        description = a.Description,
+
+                    })
+
+                    .ToListAsync();
+
+                return Ok(assessments);
+
+            }
+
+            catch (Exception ex)
+
+            {
+
+                return StatusCode(500, new { message = "An error occurred while fetching all assessments", error = ex.Message });
+
+            }
+
+        }
+
+        [HttpDelete("deleteExam/{assessmentId}")]
+
+        public async Task<IActionResult> DeleteNotTakenAssessment(int assessmentId)
+
+        {
+
+            var assessments = await _context.AssessmentScores
+
+                .Where(score => score.AssessmentID == assessmentId && score.IsTaken == false)
+
+                .ToListAsync();
+
+            if (assessments.Count == 0)
+
+            {
+
+                return NotFound(new { message = "No assessments found that have not been taken" });
+
+            }
+
+            _context.AssessmentScores.RemoveRange(assessments);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Assessments deleted successfully!" });
+
+        }
+
 
         [HttpGet("all-scores")]
         [Authorize(Roles = "Manager,Admin")] // Restrict to managers only
@@ -265,9 +445,10 @@ namespace QAssessment_project.Controllers
              userName = combined.employee.Username,
              assignmentName = assessment.Topic,
              score = combined.score.Score,
+             description = assessment.Description,
              examId = combined.score.AssessmentID,
              totalQuestions = assessment.TotalQuestions, // ✅ Fetch totalQuestions here
-             dateTaken =  combined.score.DateTaken
+             dateTaken = combined.score.DateTaken
          })
      .ToListAsync();
 
