@@ -37,7 +37,7 @@ namespace QAssessment_project.Model
         public virtual AssessmentDescription Assessment { get; set; }
 
         public int Score { get; set; } = 0; // Default score to 0
-
+        public int AttemptCount { get; set; }
         public DateTime DateTaken { get; set; } = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
     TimeZoneInfo.FindSystemTimeZoneById("India Standard Time"));// Default to current time
 

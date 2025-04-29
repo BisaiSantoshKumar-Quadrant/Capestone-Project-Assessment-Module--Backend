@@ -7,6 +7,8 @@
         public int AssessmentID { get; set; } // Reference to Assessment
         public int Score { get; set; }
         public DateTime DateTaken { get; set; }
+
+        public int ReattemptCount { get; set; }
     }
 
 }

@@ -11,5 +11,8 @@ namespace QAssessment_project.Services
         Task<LoginResultDTO> LoginAsync(LoginDTO model);
         Task<(bool Success, string Message)> ForgotPasswordAsync(string email);
         Task<(bool Success, string Message)> ResetPasswordAsync(ResetPasswordRequestDTO request);
+
+       // Task<(bool Success, string Message, LoginResultDTO LoginResult)> MicrosoftLoginAsync(string accessToken);
+
     }
 }

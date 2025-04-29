@@ -183,6 +183,69 @@
         }
       }
     },
+    "/api/assessment/EditAssessment/{ExamId}": {
+      "get": {
+        "tags": [
+          "Assessment"
+        ],
+        "parameters": [
+          {
+            "name": "ExamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/assessment/updateQuestions": {
+      "post": {
+        "tags": [
+          "Assessment"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/UpdateQuestionDto"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/UpdateQuestionDto"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/UpdateQuestionDto"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/assessment/deleteExam/{assessmentId}": {
       "delete": {
         "tags": [
@@ -706,6 +769,68 @@
         }
       }
     },
+    "/api/Employees/updateCategory": {
+      "put": {
+        "tags": [
+          "Employees"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryNameDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryNameDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryNameDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Employees/updateRole": {
+      "put": {
+        "tags": [
+          "Employees"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleNameDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleNameDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleNameDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Employees/deleteCategory/{categoryName}": {
       "delete": {
         "tags": [
@@ -781,6 +906,14 @@
                   "PassPercentage": {
                     "type": "integer",
                     "format": "int32"
+                  },
+                  "ReattemptCount": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "QuestionConduct": {
+                    "type": "integer",
+                    "format": "int32"
                   }
                 }
               },
@@ -801,6 +934,12 @@
                   "style": "form"
                 },
                 "PassPercentage": {
+                  "style": "form"
+                },
+                "ReattemptCount": {
+                  "style": "form"
+                },
+                "QuestionConduct": {
                   "style": "form"
                 }
               }
@@ -1033,9 +1172,13 @@
             "type": "string",
             "nullable": true
           },
-          "categoryName": {
+          "category": {
             "type": "string",
             "nullable": true
+          },
+          "employeeId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -1150,6 +1293,58 @@
         },
         "additionalProperties": false
       },
+      "UpdateCategoryNameDTO": {
+        "type": "object",
+        "properties": {
+          "oldCategoryName": {
+            "type": "string",
+            "nullable": true
+          },
+          "newCategoryName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateQuestionDto": {
+        "type": "object",
+        "properties": {
+          "questionID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "examID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "questionText": {
+            "type": "string",
+            "nullable": true
+          },
+          "optionA": {
+            "type": "string",
+            "nullable": true
+          },
+          "optionB": {
+            "type": "string",
+            "nullable": true
+          },
+          "optionC": {
+            "type": "string",
+            "nullable": true
+          },
+          "optionD": {
+            "type": "string",
+            "nullable": true
+          },
+          "correctAns": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateRoleByEmailDTO": {
         "type": "object",
         "properties": {
@@ -1158,6 +1353,20 @@
             "nullable": true
           },
           "roleName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateRoleNameDTO": {
+        "type": "object",
+        "properties": {
+          "oldRoleName": {
+            "type": "string",
+            "nullable": true
+          },
+          "newRoleName": {
             "type": "string",
             "nullable": true
           }

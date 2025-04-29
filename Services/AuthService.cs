@@ -116,15 +116,15 @@ namespace QAssessment_project.Services
                     return "User already exists!";
 
                 // Verify secret key
-                const string secretKey = "Manager@1199";
+                const string secretKey = "Admin@1199";
                 if (model.SecretKey != secretKey)
                     return "Invalid secret key!";
 
                 // Fetch or create the Manager role
-                var managerRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Manager");
+                var managerRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
                 if (managerRole == null)
                 {
-                    managerRole = new Role { RoleName = "Manager" };
+                    managerRole = new Role { RoleName = "Admin" };
                     _context.Roles.Add(managerRole);
                     await _context.SaveChangesAsync();
                 }
@@ -140,7 +140,7 @@ namespace QAssessment_project.Services
 
                 // Ensure only one Manager is allowed
                 if (await _context.Employees.AnyAsync(e => e.RoleID == managerRole.RoleID))
-                    return "A Manager already exists! Only one Manager is allowed.";
+                    return "A Admin already exists! Only one Manager is allowed.";
 
                 // Create new employee record after OTP verification
                 var employee = new Employee
@@ -159,7 +159,7 @@ namespace QAssessment_project.Services
                 _context.Employees.Add(employee);
                 await _context.SaveChangesAsync();
 
-                return "Manager registered successfully!";
+                return "Admin registered successfully!";
             }
             catch (Exception ex)
             {

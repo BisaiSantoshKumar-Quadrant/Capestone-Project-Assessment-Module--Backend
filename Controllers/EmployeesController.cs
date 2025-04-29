@@ -41,6 +41,7 @@ namespace QAssessment_project.Controllers
             }
         }
 
+
         // GET: api/employees
         [HttpGet]
         [Authorize] // Require authentication
@@ -61,12 +62,14 @@ namespace QAssessment_project.Controllers
                     Email = e.Email,
                     RoleName = e.Role.RoleName,
                     Username = e.Username,
-                    CategoryName = e.Category != null ? e.Category.CategoryName : null
+                    Category = e.Category != null ? e.Category.CategoryName : null,
+                    EmployeeId = e.EmployeeId
                 })
                 .ToListAsync();
 
             return Ok(employees);
         }
+
 
         // GET: api/employees/roles
         [HttpGet("roles")]
@@ -80,9 +83,10 @@ namespace QAssessment_project.Controllers
             return Ok(roleNames);
         }
 
+
         // PUT: api/employees/submit
         [HttpPut("submit")]
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> UpdateEmployeeRoleByEmail([FromBody] UpdateRoleByEmailDTO updateRoleByEmailDTO)
         {
             // Optional: Keep this check as a fallback, though it’s unlikely to be hit due to frontend filtering
@@ -200,13 +204,13 @@ namespace QAssessment_project.Controllers
             // Check if there is any employee with the role "Manager"
             bool managerExists = await _context.Employees
                 .Include(e => e.Role)
-                .AnyAsync(e => e.Role.RoleName == "Manager");
+                .AnyAsync(e => e.Role.RoleName == "Admin");
 
             return Ok(managerExists);
         }
 
         [HttpPut("update-category")]
-        [Authorize(Roles = "Manager")] // Restrict to Manager and Admin
+        [Authorize(Roles = "Manager, Admin")] // Restrict to Manager and Admin
         public async Task<IActionResult> UpdateEmployeeCategoryByEmail([FromBody] UpdateCategoryByEmailDTO updateCategoryByEmailDTO)
         {
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
@@ -233,9 +237,91 @@ namespace QAssessment_project.Controllers
             return NoContent();
         }
 
+
+        // PUT: api/employees/updateCategory
+        [HttpPut("updateCategory")]
+        [Authorize(Roles = "Manager,Admin")] // Restrict to Manager and Admin roles
+        public async Task<IActionResult> UpdateCategory([FromBody] UpdateCategoryNameDTO updateCategoryNameDTO)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(updateCategoryNameDTO.OldCategoryName) || string.IsNullOrEmpty(updateCategoryNameDTO.NewCategoryName))
+                {
+                    return BadRequest(new { message = "Both old and new category names are required" });
+                }
+
+                if (updateCategoryNameDTO.OldCategoryName == updateCategoryNameDTO.NewCategoryName)
+                {
+                    return BadRequest(new { message = "New category name must be different from the old name" });
+                }
+
+                var category = await _context.Categories.FirstOrDefaultAsync(c => c.CategoryName == updateCategoryNameDTO.OldCategoryName);
+                if (category == null)
+                {
+                    return NotFound(new { message = "Category not found" });
+                }
+
+                // Check if the new category name already exists
+                if (await _context.Categories.AnyAsync(c => c.CategoryName == updateCategoryNameDTO.NewCategoryName))
+                {
+                    return Conflict(new { message = "A category with this name already exists" });
+                }
+
+                category.CategoryName = updateCategoryNameDTO.NewCategoryName;
+                await _context.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Failed to update category: {ex.Message}");
+            }
+        }
+
+        // PUT: api/employees/updateRole
+        [HttpPut("updateRole")]
+        [Authorize(Roles = "Manager,Admin")] // Restrict to Manager and Admin roles
+        public async Task<IActionResult> UpdateRole([FromBody] UpdateRoleNameDTO updateRoleNameDTO)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(updateRoleNameDTO.OldRoleName) || string.IsNullOrEmpty(updateRoleNameDTO.NewRoleName))
+                {
+                    return BadRequest(new { message = "Both old and new role names are required" });
+                }
+
+                if (updateRoleNameDTO.OldRoleName == updateRoleNameDTO.NewRoleName)
+                {
+                    return BadRequest(new { message = "New role name must be different from the old name" });
+                }
+
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == updateRoleNameDTO.OldRoleName);
+                if (role == null)
+                {
+                    return NotFound(new { message = "Role not found" });
+                }
+
+                // Check if the new role name already exists
+                if (await _context.Roles.AnyAsync(r => r.RoleName == updateRoleNameDTO.NewRoleName))
+                {
+                    return Conflict(new { message = "A role with this name already exists" });
+                }
+
+                role.RoleName = updateRoleNameDTO.NewRoleName;
+                await _context.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Failed to update role: {ex.Message}");
+            }
+        }
+
+
         // DELETE: api/employees/deleteCategory/{categoryName}
         [HttpDelete("deleteCategory/{categoryName}")]
-        [Authorize(Roles = "Manager")] // Restrict to Manager role
+        [Authorize(Roles = "Manager,Admin")] // Restrict to Manager role
         public async Task<IActionResult> DeleteCategory(string categoryName)
         {
             try
@@ -270,9 +356,12 @@ namespace QAssessment_project.Controllers
             }
         }
 
+
+
+
         // DELETE: api/employees/deleteRole/{roleName}
         [HttpDelete("deleteRole/{roleName}")]
-        [Authorize(Roles = "Manager")] // Restrict to Manager role
+        [Authorize(Roles = "Manager,Admin")] // Restrict to Manager role
         public async Task<IActionResult> DeleteRole(string roleName)
         {
             try

@@ -79,6 +79,22 @@
   },
   {
     "ContainingType": "QAssessment_project.Controllers.AssessmentController",
+    "Method": "GetQuestionsToEdit",
+    "RelativePath": "api/assessment/EditAssessment/{ExamId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "ExamId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.AssessmentController",
     "Method": "GetEmployeeResponses",
     "RelativePath": "api/assessment/employee-responses/{employeeId}/{assessmentId}",
     "HttpMethod": "GET",
@@ -125,6 +141,22 @@
       {
         "Name": "submission",
         "Type": "QAssessment_project.DTO.AssessmentSubmissionDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.AssessmentController",
+    "Method": "UpdateQuestions",
+    "RelativePath": "api/assessment/updateQuestions",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "updatedQuestions",
+        "Type": "System.Collections.Generic.List\u00601[[QAssessment_project.DTO.UpdateQuestionDto, QAssessment_project, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "IsRequired": true
       }
     ],
@@ -451,6 +483,38 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "QAssessment_project.Controllers.EmployeesController",
+    "Method": "UpdateCategory",
+    "RelativePath": "api/Employees/updateCategory",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "updateCategoryNameDTO",
+        "Type": "QAssessment_project.DTO.UpdateCategoryNameDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "QAssessment_project.Controllers.EmployeesController",
+    "Method": "UpdateRole",
+    "RelativePath": "api/Employees/updateRole",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "updateRoleNameDTO",
+        "Type": "QAssessment_project.DTO.UpdateRoleNameDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "QAssessment_project.Controllers.QuestionUploadController",
     "Method": "UploadQuestions",
     "RelativePath": "api/question-upload",
@@ -485,6 +549,16 @@
       },
       {
         "Name": "PassPercentage",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "ReattemptCount",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "QuestionConduct",
         "Type": "System.Int32",
         "IsRequired": false
       }

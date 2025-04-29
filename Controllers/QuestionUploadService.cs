@@ -22,6 +22,7 @@ namespace QAssessment_project.Controllers
         public async Task<IActionResult> UploadQuestions([FromForm] QuestionUploadDto dto)
         {
             Console.WriteLine(dto.ExamDuration);
+            Console.WriteLine(dto.QuestionConduct);
             var result = await _questionUploadService.UploadQuestionsAsync(dto);
 
             if (result.Contains("error", System.StringComparison.OrdinalIgnoreCase))

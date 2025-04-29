@@ -43,6 +43,12 @@ namespace QAssessment_project.Migrations
                     b.Property<int>("PassPercentage")
                         .HasColumnType("int");
 
+                    b.Property<int>("QuestionConduct")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReattemptCount")
+                        .HasColumnType("int");
+
                     b.Property<int>("TimeLimit")
                         .HasColumnType("int");
 
@@ -70,6 +76,9 @@ namespace QAssessment_project.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AssessmentID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AttemptCount")
                         .HasColumnType("int");
 
                     b.Property<int>("CategoryId")

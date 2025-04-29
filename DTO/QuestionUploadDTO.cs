@@ -15,8 +15,12 @@ namespace QAssessment_project.DTO
 
         public string CategoryName {  get; set; }   
         public int PassPercentage { get; set; }
-      
-        }
+
+        public int ReattemptCount { get; set; }
+
+        public int QuestionConduct { get; set; }
+
+    }
     
 
 }

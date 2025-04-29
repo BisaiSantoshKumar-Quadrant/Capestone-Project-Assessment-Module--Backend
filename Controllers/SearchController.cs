@@ -196,6 +196,8 @@ namespace QAssessment_project.Controllers
                         topic = score.Assessment.Topic,
                         description = score.Assessment.Description,
                         score = score.Score,
+                        passPercentage=score.Assessment.PassPercentage,
+                        totalQuestions=score.Assessment.TotalQuestions,
                         dateTaken = score.DateTaken,
                         isTaken = score.IsTaken,
                         status = score.Status,

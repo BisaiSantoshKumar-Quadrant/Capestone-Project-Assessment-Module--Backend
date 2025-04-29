@@ -6,7 +6,9 @@
         public string RoleName { get; set; }
         public string Username { get; set; }
 
-        public string CategoryName { get; set; }
+        public string Category { get; set; }
+
+        public int EmployeeId { get; set; }
 
     }
 }

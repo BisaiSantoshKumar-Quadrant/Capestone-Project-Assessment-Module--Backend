@@ -26,7 +26,7 @@
         {
             var result = await _authService.ManagerRegisterAsync(model);
 
-            if (result == "Manager already exists!")
+            if (result == "Admin already exists!")
                 return Conflict(new { message = result });
 
             if (result == "Default role 'User' not found. Please seed roles first.")

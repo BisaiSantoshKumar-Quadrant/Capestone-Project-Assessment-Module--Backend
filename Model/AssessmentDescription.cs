@@ -18,12 +18,16 @@ namespace QAssessment_project.Model
 
         public int TotalQuestions { get; set; }
 
+        public int QuestionConduct {get;set;}
+
         public int TimeLimit { get; set; }
 
         public int PassPercentage { get; set; }
         public int? CategoryId {  get; set; }
         [ForeignKey("CategoryId")]
         public Category Category { get; set; }
+
+        public int ReattemptCount { get; set; } = 0; 
 
         public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
         public virtual ICollection<EmployeeResponse> EmployeeResponses { get; set; } = new List<EmployeeResponse>();
