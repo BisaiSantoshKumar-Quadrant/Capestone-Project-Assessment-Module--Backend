@@ -7,6 +7,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Fetch allowed origins from appsettings.json
+var allowedOrigins = builder.Configuration["AllowedOrigins"];
+
 builder.Services.AddScoped<IQuestionUploadService, QuestionUploadService>();
 
 // Define CORS policy with credentials allowed
@@ -15,7 +18,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigins",
         policyBuilder =>
         {
-            policyBuilder.WithOrigins("https://purple-bush-095dd6c1e.6.azurestaticapps.net") // Replace with your client's URL
+            policyBuilder.WithOrigins(allowedOrigins) // Using allowed origins from appsettings.json
                          .AllowAnyHeader()
                          .AllowAnyMethod()
                          .AllowCredentials();
@@ -23,7 +26,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DBconnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("QAssessmentDB"))); // Fix DB connection string name
 
 // Register your services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -49,7 +52,8 @@ builder.Services.AddScoped<JwtService>();
 
 // Add services to the container.
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Configure Swagger for API documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
