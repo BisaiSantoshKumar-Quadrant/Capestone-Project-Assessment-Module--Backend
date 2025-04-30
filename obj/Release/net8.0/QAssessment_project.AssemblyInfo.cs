@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("QAssessment_project")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4a6277885b59bf287e8f672611959b4303ef3b4b")]
 [assembly: System.Reflection.AssemblyProductAttribute("QAssessment_project")]
 [assembly: System.Reflection.AssemblyTitleAttribute("QAssessment_project")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

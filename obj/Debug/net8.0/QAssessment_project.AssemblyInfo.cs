@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("QAssessment_project")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a5c0b08a98166681d2dec3a0ae1a646b2a244f8c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+03205854bb987cf2fe00b96c2ccf14aa6156519d")]
 [assembly: System.Reflection.AssemblyProductAttribute("QAssessment_project")]
 [assembly: System.Reflection.AssemblyTitleAttribute("QAssessment_project")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
