@@ -15,7 +15,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigins",
         policyBuilder =>
         {
-            policyBuilder.WithOrigins("https://qassessment-backend-hwc4f6abh7cgadh9.centralindia-01.azurewebsites.net") // Replace with your client's URL
+            policyBuilder.WithOrigins("https://purple-bush-095dd6c1e.6.azurestaticapps.net") // Replace with your client's URL
                          .AllowAnyHeader()
                          .AllowAnyMethod()
                          .AllowCredentials();
