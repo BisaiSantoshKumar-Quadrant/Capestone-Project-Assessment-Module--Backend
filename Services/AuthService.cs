@@ -218,7 +218,7 @@ namespace QAssessment_project.Services
 
             await _context.SaveChangesAsync();
 
-            var resetUrl = $"http://localhost:3000/reset-password?email={email}&token={token}";
+            var resetUrl = $"https://purple-bush-095dd6c1e.6.azurestaticapps.net/reset-password?email={email}&token={token}";
             var emailBody = $"Please reset your password by clicking <a href='{resetUrl}'>here</a>. The link is valid for 24 hours.";
 
             await _emailService.SendEmailAsync(email, "Reset Your Password", emailBody);
